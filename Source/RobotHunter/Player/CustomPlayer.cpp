@@ -14,6 +14,7 @@ ACustomPlayer::ACustomPlayer()
 	currentInputContext = nullptr;
 
 	inputEnabled = true;
+	isAiming = false;
 #pragma endregion
 
 
@@ -48,7 +49,7 @@ void ACustomPlayer::SetMeshRotation(const FRotator& _rotation)
 {
 	if (playerMesh)
 	{
-		const FRotator _newRotation = FRotator(0.0f, meshBaseYaw, 0.0f) + _rotation;
+		const FRotator _newRotation = FRotator(_rotation.Pitch, meshBaseYaw + _rotation.Yaw, _rotation.Roll);
 		playerMesh->SetWorldRotation(_newRotation);
 		playerMesh->SetRelativeRotation(_newRotation);
 	}
@@ -90,6 +91,8 @@ void ACustomPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 			_inputComp->BindAction(inputConfig->GetInteractionAction(), ETriggerEvent::Started, this, &ACustomPlayer::InteractStarted);
 			_inputComp->BindAction(inputConfig->GetInteractionAction(), ETriggerEvent::Completed, this, &ACustomPlayer::InteractCompleted);
+
+			_inputComp->BindAction(inputConfig->GetAimAction(), ETriggerEvent::Started, this, &ACustomPlayer::AimStarted);
 		}
 	}
 }
@@ -151,6 +154,16 @@ void ACustomPlayer::InteractCompleted(const FInputActionValue& _value)
 }
 
 
+void ACustomPlayer::AimStarted(const FInputActionValue& _value)
+{
+	if (inputEnabled)
+	{
+		isAiming = !isAiming;
+		SetFSMBool(EPlayerBool::AimBool, isAiming);
+	}
+}
+
+
 void ACustomPlayer::EnableInputContext(UInputMappingContext* _context)
 {
 	if (_context)
@@ -204,7 +217,7 @@ void ACustomPlayer::SetActorRotation(const FRotator& _rotation, const bool _upda
 }
 
 
-void ACustomPlayer::UpdateCameraCurrentSettings(const FString& _key)
+void ACustomPlayer::UpdateCameraCurrentSettings(const ECameraKey& _key)
 {
 	if (customCameraComponent)
 		customCameraComponent->UpdateCurrentSettings(_key);

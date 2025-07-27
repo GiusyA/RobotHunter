@@ -97,13 +97,13 @@ void UHandcarNitroWidget::UpdatePropertiesFromDA(UHandcarPropertiesDA* _da)
 {
 	if (_da)
 	{
-		_da->UpdateCursorSpeed(cursorSpeed);
+		_da->UpdateNitroUICursorSpeed(cursorSpeed);
 
-		_da->UpdateZoneSize(greenZoneSize, yellowZoneSize);
+		_da->UpdateNitroUIZoneSize(greenZoneSize, yellowZoneSize);
 
-		_da->UpdateMovementAngle(minMovementAngle, maxMovementAngle);
-		_da->UpdateMovementSpeed(minMovementSpeed, maxMovementSpeed);
-		_da->UpdateMovementTime(minMovementTime, maxMovementTime);
+		_da->UpdateNitroUIMovementAngle(minMovementAngle, maxMovementAngle);
+		_da->UpdateNitroUIMovementSpeed(minMovementSpeed, maxMovementSpeed);
+		_da->UpdateNitroUIMovementTime(minMovementTime, maxMovementTime);
 	}
 }
 

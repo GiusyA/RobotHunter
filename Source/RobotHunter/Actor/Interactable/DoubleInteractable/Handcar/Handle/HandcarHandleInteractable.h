@@ -84,6 +84,8 @@ class ROBOTHUNTER_API AHandcarHandleInteractable : public ADoubleInteractableAct
 
 #pragma region Setter/Getter
 public:
+	FORCEINLINE void InverseNegateAcceleration() { negateAcceleration = !negateAcceleration; }
+
 	FORCEINLINE float GetCurrentAcceleration() const { return currentAcceleration; }
 #pragma endregion
 
@@ -103,6 +105,8 @@ private:
 
 	void StartAcceleration(const FInputActionValue& _value);
 	void StopAcceleration(const FInputActionValue& _value);
+
+	void ChangeWay(const FInputActionValue& _value);
 
 protected:
 	virtual void PrintDebug() const override;

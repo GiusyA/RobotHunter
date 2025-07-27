@@ -1,13 +1,44 @@
 #pragma once
 
 
+#pragma region Lerp
+UENUM()
+enum ECustomLerpType
+{
+	DefaultLerpType,
+
+	FloatLerpType,
+	VectorLerpType,
+	RotatorLerpType
+};
+#pragma endregion
+
+
 #pragma region Widget
 UENUM()
 enum EWidgetType
 {
-	HandcarNitroWidget,
+	DefaultWidgetType,
 
-	DefaultWidgetType
+	ExplorationWidget,
+	AimWidget,
+
+	HandcarNitroWidget,
+	HandcarNitroFuelWidget,
+	HandcarBrakeWidget,
+	HandcarHandleWidget,
+};
+#pragma endregion
+
+
+#pragma region Camera
+UENUM()
+enum ECameraKey
+{
+	DefaultCameraKey,
+
+	ExplorationCameraKey,
+	AimCameraKey
 };
 #pragma endregion
 
@@ -16,10 +47,15 @@ enum EWidgetType
 UENUM()
 enum EPlayerBool
 {
+	DefaultPlayerBool,
+
+	AimBool,
+
 	HandcarNitroBool,
+	HandcarBrakeBool,
 	HandcarHandleBool,
 
-	DefaultPlayerBool
+	CountPlayerBool UMETA(Hidden)
 };
 #pragma endregion
 
@@ -28,10 +64,10 @@ enum EPlayerBool
 UENUM()
 enum ERailWay
 {
+	DefaultWay,
+
 	DepartureWay,
 	ReturnWay,
-
-	DefaultWay
 };
 #pragma endregion
 
@@ -41,12 +77,12 @@ enum ERailWay
 UENUM()
 enum ENitroZoneColor
 {
+	DefaultZone,
+
 	GreenZone,
 	YellowZone,
 	RedZone,
 	BlackZone,
-
-	DefaultZone
 };
 #pragma endregion
 

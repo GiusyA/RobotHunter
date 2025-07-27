@@ -21,6 +21,12 @@ UHandcarPropertiesDA::UHandcarPropertiesDA()
 #pragma endregion
 
 
+#pragma region Brake
+	useBrakePositionOnAngleScopeDebug = false;
+	useBrakeDecelerationValueDebug = false;
+#pragma endregion
+
+
 #pragma region Handle
 	useHandleAccelerationDebug = false;
 	useFirstHeightRapportDebug = false;
@@ -107,13 +113,47 @@ UHandcarPropertiesDA::UHandcarPropertiesDA()
 #pragma endregion
 
 
-#pragma region FuelConsumption
+#pragma region Fuel
+	maxFuel = 500.0f;
+
+
+#pragma region Consumption
 	greenZoneFuelConsumption = 5.0f;
 	yellowZoneFuelConsumption = 10.0f;
 	redZoneFuelConsumption = 15.0f;
 #pragma endregion
 
 
+#pragma endregion
+
+
+#pragma endregion
+
+
+#pragma region Brake
+
+
+#pragma region Position
+
+
+#pragma region Angle
+	brakeTightenedAngle = 45.0f;
+	brakeReleasedAngle = 135.0f;
+#pragma endregion
+
+
+#pragma region Movement
+	brakeTightenMinValue = 7.0f;
+	brakeTightenMaxValue = 10.0f;
+
+	brakeReleaseSpeed = 20.0f;
+#pragma endregion
+
+
+#pragma endregion
+
+
+	brakeDecelerationValue = -75.0f;
 #pragma endregion
 
 
@@ -148,7 +188,7 @@ void UHandcarPropertiesDA::UpdateUseDebug(bool& _useRealtime, bool& _useDebug, b
 	_useDebugTool = useDebugTool;
 }
 
-void UHandcarPropertiesDA::UpdateUseHandcarDebug(bool& _useSpeedDebug, bool& _useFrictionDebug, bool& _useSlopeAccelerationDebug, bool& _useTotalAccelerationDebug)
+void UHandcarPropertiesDA::UpdateHandcarUseDebug(bool& _useSpeedDebug, bool& _useFrictionDebug, bool& _useSlopeAccelerationDebug, bool& _useTotalAccelerationDebug)
 {
 	_useSpeedDebug = useSpeedDebug;
 	_useFrictionDebug = useFrictionDebug;
@@ -157,13 +197,19 @@ void UHandcarPropertiesDA::UpdateUseHandcarDebug(bool& _useSpeedDebug, bool& _us
 
 }
 
-void UHandcarPropertiesDA::UpdateUseNitroDebug(bool& _useAccelerationDebug, bool& _useFuelConsumptionDebug)
+void UHandcarPropertiesDA::UpdateNitroUseDebug(bool& _useAccelerationDebug, bool& _useFuelConsumptionDebug)
 {
 	_useAccelerationDebug = useNitroAccelerationDebug;
 	_useFuelConsumptionDebug = useFuelConsumptionDebug;
 }
 
-void UHandcarPropertiesDA::UpdateUseHandleDebug(bool& _useAccelerationDebug, bool& _useFirstHeightRapportDebug, bool& _useSecondHeightRapportDebug)
+void UHandcarPropertiesDA::UpdateBrakeUseDebug(bool& _usePositionOnAngleScopeDebug, bool& _useDecelerationValueDebug)
+{
+	_usePositionOnAngleScopeDebug = useBrakePositionOnAngleScopeDebug;
+	_useDecelerationValueDebug = useBrakeDecelerationValueDebug;
+}
+
+void UHandcarPropertiesDA::UpdateHandleUseDebug(bool& _useAccelerationDebug, bool& _useFirstHeightRapportDebug, bool& _useSecondHeightRapportDebug)
 {
 	_useAccelerationDebug = useHandleAccelerationDebug;
 	_useFirstHeightRapportDebug = useFirstHeightRapportDebug;
@@ -177,13 +223,14 @@ void UHandcarPropertiesDA::UpdateUseHandleDebug(bool& _useAccelerationDebug, boo
 
 
 #pragma region Movement
-void UHandcarPropertiesDA::UpdateSpeed(float& _maxSpeed, float& _rotationSpeed)
+void UHandcarPropertiesDA::UpdateHandcarSpeed(float& _maxSpeed, float& _rotationSpeed)
 {
 	_maxSpeed = maxSpeed;
 	_rotationSpeed = rotationSpeed;
 }
 
-void UHandcarPropertiesDA::UpdateFriction(float& _friction, float& _frictionSpeedPercent)
+
+void UHandcarPropertiesDA::UpdateHandcarFriction(float& _friction, float& _frictionSpeedPercent)
 {
 	_friction = friction;
 	_frictionSpeedPercent = frictionSpeedPercent;
@@ -195,13 +242,13 @@ void UHandcarPropertiesDA::UpdateFriction(float& _friction, float& _frictionSpee
 
 
 #pragma region UI
-void UHandcarPropertiesDA::UpdateCursorSpeed(float& _cursorSpeed)
+void UHandcarPropertiesDA::UpdateNitroUICursorSpeed(float& _cursorSpeed)
 {
 	_cursorSpeed = cursorSpeed;
 }
 
 
-void UHandcarPropertiesDA::UpdateZoneSize(float& _greenZoneSize, float& _yellowZoneSize)
+void UHandcarPropertiesDA::UpdateNitroUIZoneSize(float& _greenZoneSize, float& _yellowZoneSize)
 {
 	_greenZoneSize = greenZoneSize;
 	_yellowZoneSize = yellowZoneSize;
@@ -209,19 +256,19 @@ void UHandcarPropertiesDA::UpdateZoneSize(float& _greenZoneSize, float& _yellowZ
 
 
 #pragma region Movement
-void UHandcarPropertiesDA::UpdateMovementAngle(float& _minMovementAngle, float& _maxMovementAngle)
+void UHandcarPropertiesDA::UpdateNitroUIMovementAngle(float& _minMovementAngle, float& _maxMovementAngle)
 {
 	_minMovementAngle = minMovementAngle;
 	_maxMovementAngle = maxMovementAngle;
 }
 
-void UHandcarPropertiesDA::UpdateMovementSpeed(float& _minMovementSpeed, float& _maxMovementSpeed)
+void UHandcarPropertiesDA::UpdateNitroUIMovementSpeed(float& _minMovementSpeed, float& _maxMovementSpeed)
 {
 	_minMovementSpeed = minMovementSpeed;
 	_maxMovementSpeed = maxMovementSpeed;
 }
 
-void UHandcarPropertiesDA::UpdateMovementTime(float& _minMovementTime, float& _maxMovementTime)
+void UHandcarPropertiesDA::UpdateNitroUIMovementTime(float& _minMovementTime, float& _maxMovementTime)
 {
 	_minMovementTime = minMovementTime;
 	_maxMovementTime = maxMovementTime;
@@ -236,11 +283,33 @@ void UHandcarPropertiesDA::UpdateNitroAcceleration(float& _acceleration)
 	_acceleration = nitroAcceleration;
 }
 
-void UHandcarPropertiesDA::UpdateFuelConsumption(float& _greenZoneFuelConsumption, float& _yellowZoneFuelConsumption, float& _redZoneFuelConsumption)
+void UHandcarPropertiesDA::UpdateNitroFuel(float& _maxFuel, float& _greenZoneFuelConsumption, float& _yellowZoneFuelConsumption, float& _redZoneFuelConsumption)
 {
+	_maxFuel = maxFuel;
 	_greenZoneFuelConsumption = greenZoneFuelConsumption;
 	_yellowZoneFuelConsumption = yellowZoneFuelConsumption;
 	_redZoneFuelConsumption = redZoneFuelConsumption;
+}
+#pragma endregion
+
+
+#pragma region Brake
+void UHandcarPropertiesDA::UpdateBrakeAngle(float& _tightenedAngle, float& _releasedAngle)
+{
+	_tightenedAngle = brakeTightenedAngle;
+	_releasedAngle = brakeReleasedAngle;
+}
+
+void UHandcarPropertiesDA::UpdateBrakeTightenValue(float& _tightenMinValue, float& _tightenMaxValue)
+{
+	_tightenMinValue = brakeTightenMinValue;
+	_tightenMaxValue = brakeTightenMaxValue;
+}
+
+
+void UHandcarPropertiesDA::UpdateBrakeDecelerationValue(float& _decelerationValue)
+{
+	_decelerationValue = brakeDecelerationValue;
 }
 #pragma endregion
 
@@ -251,6 +320,7 @@ void UHandcarPropertiesDA::UpdateHandleMeshRotation(float& _maxRotation, float& 
 	_maxRotation = handleMaxRotation;
 	_rotationValue = handleRotationValue;
 }
+
 
 void UHandcarPropertiesDA::UpdateHandleForce(float& _minForce, float& _maxForce)
 {

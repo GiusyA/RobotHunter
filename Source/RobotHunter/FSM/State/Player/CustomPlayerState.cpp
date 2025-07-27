@@ -5,12 +5,14 @@
 
 UCustomPlayerState::UCustomPlayerState()
 {
-	cameraSettingsKey = FString();
-	widgetType = EWidgetType::DefaultWidgetType;
+	cameraSettingsKey = ECameraKey::DefaultCameraKey;
+
+	widgetTypes = TArray<TEnumAsByte<EWidgetType>>();
 
 	inputContext = nullptr;
 
 	player = nullptr;
+	hud = nullptr;
 }
 
 
@@ -26,6 +28,17 @@ void UCustomPlayerState::RetrievePlayer()
 	}
 }
 
+void UCustomPlayerState::RetrieveHUD()
+{
+	if (!hud)
+	{
+		APlayerController* _controller = FIRST_PLAYER_CONTROLLER;
+
+		if (_controller)
+			hud = CAST(ACustomHUD, _controller->GetHUD());
+	}
+}
+
 
 void UCustomPlayerState::UpdateCameraSettings()
 {
@@ -33,17 +46,16 @@ void UCustomPlayerState::UpdateCameraSettings()
 		player->UpdateCameraCurrentSettings(cameraSettingsKey);
 }
 
-void UCustomPlayerState::UpdateWidget()
+void UCustomPlayerState::ShowWidgets()
 {
-	APlayerController* _controller = FIRST_PLAYER_CONTROLLER;
+	if (hud)
+		hud->SetWidgetsVisibility(true, widgetTypes);
+}
 
-	if (_controller)
-	{
-		ACustomHUD* _hud = CAST(ACustomHUD, _controller->GetHUD());
-
-		if (_hud)
-			_hud->SetCurrentWidget(widgetType);
-	}
+void UCustomPlayerState::HideWidgets()
+{
+	if (hud)
+		hud->SetWidgetsVisibility(false, widgetTypes);
 }
 
 
@@ -63,13 +75,15 @@ void UCustomPlayerState::EnablePlayerInputContext()
 void UCustomPlayerState::Enter()
 {
 	RetrievePlayer();
+	RetrieveHUD();
 
 	UpdateCameraSettings();
-	UpdateWidget();
+	ShowWidgets();
 	EnablePlayerInputContext();
 }
 
 void UCustomPlayerState::Exit()
 {
+	HideWidgets();
 	DisablePlayerInputContext();
 }

@@ -15,13 +15,13 @@ class ROBOTHUNTER_API ACustomHUD : public AHUD
 
 #pragma region Properties
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Widget")
-	TEnumAsByte<EWidgetType> currentWidgetType;
-
-	UPROPERTY(EditAnywhere, Category = "Custom Property|Widget")
 	TArray<TSubclassOf<UCustomUserWidget>> widgetReferences;
 
 	UPROPERTY()
 	TMap<TEnumAsByte<EWidgetType>, UCustomUserWidget*> widgets;
+
+	UPROPERTY()
+	TArray<TEnumAsByte<EWidgetType>> currentWidgetTypes;
 #pragma endregion
 
 
@@ -35,9 +35,24 @@ public:
 		return nullptr;
 	}
 
-	FORCEINLINE UCustomUserWidget* GetCurrentWidget() const
+	FORCEINLINE TArray<UCustomUserWidget*> GetCurrentWidgets() const
 	{
-		return GetWidget(currentWidgetType);
+		TArray<UCustomUserWidget*> _currentWidgets = TArray<UCustomUserWidget*>();
+
+		if (!currentWidgetTypes.IsEmpty())
+		{
+			UCustomUserWidget* _widget = nullptr;
+
+			for (const EWidgetType _type : currentWidgetTypes)
+			{
+				_widget = GetWidget(_type);
+
+				if (_widget)
+					_currentWidgets.Add(_widget);
+			}
+		}
+
+		return _currentWidgets;
 	}
 #pragma endregion
 
@@ -53,6 +68,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	void SetCurrentWidget(const EWidgetType& _type);
+	void SetWidgetVisibility(const bool _isVisible, const EWidgetType& _type);
+	void SetWidgetsVisibility(const bool _isVisible, const TArray<TEnumAsByte<EWidgetType>>& _types);
 #pragma endregion
 };

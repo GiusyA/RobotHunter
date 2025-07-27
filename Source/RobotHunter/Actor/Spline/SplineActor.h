@@ -25,7 +25,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Tool|Points")
 	bool useCustomDistanceTool;
 
-	UPROPERTY(EditAnywhere, Category = "Custom Property|Tool|Points", meta = (EditCondition = "useCustomDistance", EditConditionHides))
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Tool|Points", meta = (EditCondition = "useCustomDistanceTool", EditConditionHides))
 	float distanceBetweenPointsTool;
 
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Tool|Points")

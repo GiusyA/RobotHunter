@@ -26,7 +26,10 @@ void UCustomActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	if (useDebug)
+	{
 		DrawDebug();
+		PrintDebug();
+	}
 
 	if (useDebugTool)
 		DrawDebugTool();

@@ -21,14 +21,18 @@ class ROBOTHUNTER_API UPlayerFSMComponent : public UFSMComponent
 public:
 	FORCEINLINE void SetBool(const EPlayerBool& _index, const bool _newValue)
 	{
-		if (_index >= 0 && _index < EPlayerBool::DefaultPlayerBool)
-			fsmBool[_index] = _newValue;
+		const int _internal_index = _index - 1;
+
+		if (_internal_index >= 0 && _internal_index < EPlayerBool::CountPlayerBool - 1)
+			fsmBool[_internal_index] = _newValue;
 	}
 
 	FORCEINLINE bool GetBool(const EPlayerBool& _index)
 	{
-		if (_index >= 0 && _index < EPlayerBool::DefaultPlayerBool)
-			return fsmBool[_index];
+		const int _internal_index = _index - 1;
+
+		if (_internal_index >= 0 && _internal_index < EPlayerBool::CountPlayerBool - 1)
+			return fsmBool[_internal_index];
 
 		return false;
 	}

@@ -5,7 +5,9 @@
 #include "RobotHunter/DataAsset/Handcar/HandcarPropertiesDA.h"
 #include "RobotHunter/Actor/Spline/Rail/RailActor.h"
 #include "RobotHunter/Actor/Interactable/CameraInteractable/Handcar/Nitro/HandcarNitroInteractable.h"
+#include "RobotHunter/Actor/Interactable/CameraInteractable/Handcar/Brake/HandcarBrakeInteractable.h"
 #include "RobotHunter/Actor/Interactable/DoubleInteractable/Handcar/Handle/HandcarHandleInteractable.h"
+#include "Components/BoxComponent.h"
 #include "HandcarActor.generated.h"
 
 UCLASS()
@@ -99,10 +101,11 @@ class ROBOTHUNTER_API AHandcarActor : public ACustomActor
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Nitro")
 	TObjectPtr<AHandcarNitroInteractable> nitro;
 
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Brake")
+	TObjectPtr<AHandcarBrakeInteractable> brake;
+
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Handle")
 	TObjectPtr<AHandcarHandleInteractable> handle;
-
-
 #pragma endregion
 
 
@@ -117,7 +120,10 @@ public:
 	FORCEINLINE float GetCurrentDistance() const { return currentDistance; }
 
 	FORCEINLINE ARailActor* GetCurrentRail() const { return currentRail; }
+
 	FORCEINLINE AHandcarNitroInteractable* GetNitro() const { return nitro; }
+	FORCEINLINE AHandcarBrakeInteractable* GetBrake() const { return brake; }
+	FORCEINLINE AHandcarHandleInteractable* GetHandle() const { return handle; }
 #pragma endregion
 
 
@@ -154,5 +160,13 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void PrintDebug() const override;
+
+	virtual void OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+		bool bFromSweep, const FHitResult& SweepResult) override;
+
+	virtual void OnTriggerEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) override;
+
+public:
+	void ChangeWay();
 #pragma endregion
 };

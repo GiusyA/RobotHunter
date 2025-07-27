@@ -27,6 +27,10 @@ AInteractableActor::AInteractableActor()
 	isDetected = false;
 
 	movePlayer = false;
+	
+	updatePlayerMeshRoll = false;
+	updatePlayerMeshPitch = false;
+
 	isSimpleInteractable = true;
 }
 
@@ -91,19 +95,6 @@ void AInteractableActor::FirstInteraction(ACustomPlayer* _player, USceneComponen
 	}
 }
 
-void AInteractableActor::SecondInteraction(ACustomPlayer* _player)
-{
-	if (movePlayer)
-	{
-		if (_player)
-		{
-			const FRotator _cameraRot = _player->GetCameraRelativeRotation();
-			const FRotator _meshRot = _player->GetMeshRotation();
-			_player->SetActorRotation(FRotator(_meshRot.Pitch, _cameraRot.Yaw, _meshRot.Roll));
-		}
-	}
-}
-
 
 void AInteractableActor::SetupPlayerInputs(ACustomPlayer* _player)
 {
@@ -132,6 +123,27 @@ void AInteractableActor::RotateInteractionText(UTextRenderComponent* _textComp)
 
 		FRotator _newRot = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), _cameraLoc);
 		_textComp->SetRelativeRotation(_newRot);
+	}
+}
+
+
+void AInteractableActor::UpdatePlayerMeshRoll(ACustomPlayer* _player, USceneComponent* _playerPosition, const float _newRoll)
+{
+	if (updatePlayerMeshRoll && _player && _playerPosition)
+	{
+		const FRotator _positionRot = _playerPosition->GetRelativeRotation();
+		const FRotator _meshRot = _player->GetMeshRotation();
+		_player->SetActorRotation(FRotator(_meshRot.Pitch, _positionRot.Yaw, _newRoll));
+	}
+}
+
+void AInteractableActor::UpdatePlayerMeshPitch(ACustomPlayer* _player, USceneComponent* _playerPosition, const float _newPitch)
+{
+	if (updatePlayerMeshPitch && _player && _playerPosition)
+	{
+		const FRotator _positionRot = _playerPosition->GetRelativeRotation();
+		const FRotator _meshRot = _player->GetMeshRotation();
+		_player->SetActorRotation(FRotator(_newPitch, _positionRot.Yaw, _meshRot.Roll));
 	}
 }
 

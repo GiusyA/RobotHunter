@@ -28,5 +28,8 @@ public:
 #pragma region Functions
 public:
 	UCustomUserWidget(const FObjectInitializer& ObjectInitializer);
+
+protected:
+	FText CreateFTextFromFloat(const float _value, const int _maximumFractionalDigits = 0);
 #pragma endregion
 };

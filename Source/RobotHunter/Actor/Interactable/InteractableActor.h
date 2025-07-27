@@ -33,6 +33,10 @@ protected:
 	bool isDetected;
 
 	bool movePlayer;
+
+	bool updatePlayerMeshRoll;
+	bool updatePlayerMeshPitch;
+
 	bool isSimpleInteractable;
 #pragma endregion
 
@@ -55,12 +59,15 @@ protected:
 	virtual void InteractionCompleted_Internal(ACustomPlayer* _player, bool& _inInteraction);
 
 	virtual void FirstInteraction(ACustomPlayer* _player, USceneComponent* _playerPosition);
-	virtual void SecondInteraction(ACustomPlayer* _player);
+	virtual void SecondInteraction(ACustomPlayer* _player) {}
 
 	virtual void SetupPlayerInputs(ACustomPlayer* _player);
 	virtual void TickRotateInteractionText();
 
 	void RotateInteractionText(UTextRenderComponent* _textComp);
+
+	void UpdatePlayerMeshRoll(ACustomPlayer* _player, USceneComponent* _playerPosition, const float _newRoll);
+	void UpdatePlayerMeshPitch(ACustomPlayer* _player, USceneComponent* _playerPosition, const float _newPitch);
 
 public:
 	virtual void InteractionStarted(ACustomPlayer* _player, bool& _inInteraction);

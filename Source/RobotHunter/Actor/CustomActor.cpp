@@ -14,6 +14,8 @@ ACustomActor::ACustomActor()
 	useDebug = false;
 	useDebugTool = false;
 
+	hud = nullptr;
+
 	isRuntime = false;
 }
 
@@ -21,7 +23,15 @@ ACustomActor::ACustomActor()
 void ACustomActor::BeginPlay()
 {
 	Super::BeginPlay();
+
 	isRuntime = true;
+	RetrieveHUD();
+
+	if (trigger)
+	{
+		trigger->OnComponentBeginOverlap.AddDynamic(this, &ACustomActor::OnTriggerBeginOverlap);
+		trigger->OnComponentEndOverlap.AddDynamic(this, &ACustomActor::OnTriggerEndOverlap);
+	}
 }
 
 void ACustomActor::Tick(float DeltaTime)
@@ -43,3 +53,14 @@ bool ACustomActor::ShouldTickIfViewportsOnly() const
 	return useRealtime;
 }
 
+
+void ACustomActor::RetrieveHUD()
+{
+	if (!hud)
+	{
+		APlayerController* _controller = FIRST_PLAYER_CONTROLLER;
+
+		if (_controller)
+			hud = CAST(ACustomHUD, _controller->GetHUD());
+	}
+}

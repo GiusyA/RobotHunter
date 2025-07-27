@@ -7,7 +7,7 @@ UPlayerFSMComponent::UPlayerFSMComponent()
 
 void UPlayerFSMComponent::InitAllBool()
 {
-	const int _boolNum = EPlayerBool::DefaultPlayerBool;
+	const int _boolNum = EPlayerBool::CountPlayerBool - 1;
 
 	for (int i = 0; i < _boolNum; i++)
 		fsmBool.Add(false);

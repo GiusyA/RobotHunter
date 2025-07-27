@@ -4,6 +4,7 @@
 #include "RobotHunter/Component/CustomActorComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "RobotHunter/Utils/Lerp/CustomLerp.h"
 #include "CustomCameraComponent.generated.h"
 
 
@@ -44,6 +45,31 @@ struct FCameraLagSettings
 
 
 USTRUCT()
+struct FCameraTransitionSettings
+{
+	GENERATED_BODY()
+
+
+	UPROPERTY(EditAnywhere)
+	bool reverseCurve;
+
+	UPROPERTY(EditAnywhere, meta = (UIMin = 0.0f, ClampMin = 0.0f))
+	float duration;
+	
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UCurveFloat> curve;
+
+
+	FCameraTransitionSettings()
+	{
+		reverseCurve = false;
+		duration = 1.0f;
+		curve = nullptr;
+	}
+};
+
+
+USTRUCT()
 struct FCameraSettings
 {
 	GENERATED_BODY()
@@ -69,12 +95,16 @@ struct FCameraSettings
 	UPROPERTY(EditAnywhere, meta = (UIMin = 5.0f, ClampMin = 5.0f, UIMax = 170.0f, ClampMax = 170.0f))
 	float fieldOfView;
 
-	UPROPERTY(EditAnywhere, meta = (UIMin = 0.0f, ClampMin = 0.0f))
-	float blendSpeed;
-
 
 	UPROPERTY(EditAnywhere)
 	FCameraLagSettings lag;
+
+
+	UPROPERTY(EditAnywhere)
+	FCameraTransitionSettings defaultTransition;
+
+	UPROPERTY(EditAnywhere)
+	TMap<TEnumAsByte<ECameraKey>, FCameraTransitionSettings> transitions;
 
 
 	FCameraSettings()
@@ -88,9 +118,25 @@ struct FCameraSettings
 		pitchClampMax = 65.0f;
 
 		fieldOfView = 90.0f;
-		blendSpeed = 1.0f;
 
 		lag = FCameraLagSettings();
+
+		defaultTransition = FCameraTransitionSettings();
+		transitions = TMap<TEnumAsByte<ECameraKey>, FCameraTransitionSettings>();
+	}
+
+
+	FCameraTransitionSettings GetTransitionSettings(const ECameraKey& _key) const
+	{
+		if (transitions.Contains(_key))
+			return transitions[_key];
+
+		return defaultTransition;
+	}
+
+	float GetTransitionDuration(const ECameraKey& _key) const
+	{
+		return GetTransitionSettings(_key).duration;
 	}
 };
 #pragma endregion
@@ -111,17 +157,19 @@ class ROBOTHUNTER_API UCustomCameraComponent : public UCustomActorComponent
 
 
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Settings")
-	FString currentSettingsKey;
+	TEnumAsByte<ECameraKey> currentSettingsKey;
 
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Settings")
-	TMap<FString, FCameraSettings> allSettings;
+	TMap<TEnumAsByte<ECameraKey>, FCameraSettings> allSettings;
 
 
 #pragma region Lerp
-	bool useLerp;
+	bool canLerp;
 
-	bool isLerpingPosition;
-	bool isLerpingRotation;
+	FCustomLerp socketOffsetLerp;
+	FCustomLerp armLengthLerp;
+
+	FCustomLerp rotationLerp;
 #pragma endregion
 
 
@@ -131,7 +179,9 @@ class ROBOTHUNTER_API UCustomCameraComponent : public UCustomActorComponent
 
 #pragma region Setter/Getter
 public:
-	FORCEINLINE FString GetCurrentSettingsKey() const { return currentSettingsKey; }
+	FORCEINLINE float GetTransitionDuration(const ECameraKey& _key) const { return currentSettings.GetTransitionDuration(_key); }
+
+	FORCEINLINE TEnumAsByte<ECameraKey> GetCurrentSettingsKey() const { return currentSettingsKey; }
 	FORCEINLINE FCameraSettings GetCurrentSettings() const { return currentSettings; }
 
 
@@ -164,8 +214,6 @@ public:
 	UCustomCameraComponent();
 
 private:
-	void ClampPitch(FRotator& _rotation);
-
 #pragma region Update
 	void UpdateLag(const FCameraLagSettings& _newLagSettings);
 	void UpdateFOV(const float _newFOV);
@@ -174,8 +222,14 @@ private:
 #pragma endregion
 
 #pragma region Lerp
-	void LerpPosition(const float _lerpAlpha, const FVector& _newPosition);
-	void LerpRotation(const float _lerpAlpha, const FRotator& _newRotation);
+	void InitSocketOffsetLerp();
+	void InitArmLengthLerp();
+	void InitRotationLerp();
+
+	void StartLerps(const ECameraKey& _lastSettingsKey);
+
+	void LerpPosition(const float _deltaTime);
+	void LerpRotation(const float _deltaTime);
 #pragma endregion
 
 protected:
@@ -187,8 +241,9 @@ protected:
 #endif
 
 public:
-	virtual void UpdateCurrentSettings(const FString& _key);
 	virtual void SetupAttachment(USceneComponent* _root) const override;
+
+	void UpdateCurrentSettings(const ECameraKey& _key);
 
 	void AddRelativeRotation(FRotator& _rotation);
 	void SetRelativeRotation(FRotator& _rotation, const bool _updateYawOnly = true);

@@ -33,6 +33,18 @@ void UFSMComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 
+void UFSMComponent::PrintDebug() const
+{
+	if (currentFSM)
+	{
+		UCustomState* _currentState = currentFSM->GetCurrentState();
+
+		if (_currentState)
+			PRINT_SCREEN_TICK(_currentState->GetName(), FColor::Blue);
+	}
+}
+
+
 void UFSMComponent::Start()
 {
 	if (initialFSMReference)

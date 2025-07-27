@@ -4,9 +4,11 @@
 #include "InputMappingContext.h"
 #include "RobotHunter/Actor/Interactable/CameraInteractable/CameraInteractableActor.h"
 #include "RobotHunter/UI/UserWidget/Handcar/Nitro/HandcarNitroWidget.h"
+#include "RobotHunter/UI/UserWidget/Handcar/Nitro/HandcarNitroFuelWidget.h"
 #include "RobotHunter/DataAsset/Handcar/HandcarPropertiesDA.h"
 #include "HandcarNitroInteractable.generated.h"
 
+class AHandcarActor;
 
 UCLASS()
 class ROBOTHUNTER_API AHandcarNitroInteractable : public ACameraInteractableActor
@@ -34,17 +36,37 @@ class ROBOTHUNTER_API AHandcarNitroInteractable : public ACameraInteractableActo
 	float acceleration;
 
 
-#pragma region FuelConsumption
-	UPROPERTY(EditAnywhere, Category = "Custom Property|Fuel Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
+#pragma region Fuel
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Fuel", meta = (UIMin = 0.0f, ClampMin = 0.0f))
+	float maxFuel;
+
+	bool hasFuel;
+	float currentFuel;
+
+
+#pragma region Consumption
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Fuel|Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
 	float greenZoneFuelConsumption;
 
-	UPROPERTY(EditAnywhere, Category = "Custom Property|Fuel Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Fuel|Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
 	float yellowZoneFuelConsumption;
 
-	UPROPERTY(EditAnywhere, Category = "Custom Property|Fuel Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Fuel|Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
 	float redZoneFuelConsumption;
 
 	float currentFuelConsumption;
+#pragma endregion
+
+
+#pragma endregion
+
+
+#pragma region UI
+	UPROPERTY()
+	TObjectPtr<UHandcarNitroWidget> widget;
+
+	UPROPERTY()
+	TObjectPtr<UHandcarNitroFuelWidget> fuelWidget;
 #pragma endregion
 
 
@@ -52,7 +74,7 @@ class ROBOTHUNTER_API AHandcarNitroInteractable : public ACameraInteractableActo
 	TObjectPtr<UHandcarPropertiesDA> propertiesDA;
 
 	UPROPERTY()
-	TObjectPtr<UHandcarNitroWidget> widget;
+	TObjectPtr<AHandcarActor> handcar;
 
 
 	bool isActive;
@@ -64,7 +86,7 @@ class ROBOTHUNTER_API AHandcarNitroInteractable : public ACameraInteractableActo
 
 #pragma region Setter/Getter
 public:
-	FORCEINLINE void SetNegateAcceleration(const bool _negate) { negateAcceleration = _negate; }
+	FORCEINLINE void InverseNegateAcceleration() { negateAcceleration = !negateAcceleration; }
 
 	FORCEINLINE bool GetIsActive() const { return isActive; }
 	FORCEINLINE float GetCurrentAcceleration() const { return currentAcceleration; }
@@ -77,13 +99,17 @@ public:
 
 private:
 	void InitializeWidget();
+	void InitializeFuelWidget();
 	void MoveWidgetCursor(const FInputActionValue& _value);
 
 	void UpdatePropertiesFromDA();
 	void UpdateCurrentFuelConsumption();
 	void UpdateCurrentAcceleration();
 
+	void ConsumeFuel(const float _deltaTime);
+
 	UHandcarNitroWidget* FindHandcarNitroWidget() const;
+	UHandcarNitroFuelWidget* FindHandcarNitroFuelWidget() const;
 
 protected:
 	virtual void PrintDebug() const override;
@@ -94,7 +120,7 @@ protected:
 	virtual void SecondInteraction(ACustomPlayer* _player) override;
 
 public:
-	void NitroBeginPlay(UHandcarPropertiesDA* _da);
+	void NitroBeginPlay(UHandcarPropertiesDA* _da, AHandcarActor* _handcar);
 	void NitroTick(const float _deltaTime);
 #pragma endregion
 };

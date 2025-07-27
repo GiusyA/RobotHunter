@@ -5,6 +5,10 @@
 
 AHandcarActor::AHandcarActor()
 {
+	trigger = CREATE_DEFAULT_SUBOBJECT(UBoxComponent, "Trigger");
+	SETUP_ATTACHMENT(trigger, RootComponent);
+
+
 #pragma region DataAsset
 	useDataAsset = true;
 	dataAsset = nullptr;
@@ -62,6 +66,7 @@ AHandcarActor::AHandcarActor()
 
 
 	nitro = nullptr;
+	brake = nullptr;
 	handle = nullptr;
 }
 
@@ -86,10 +91,10 @@ void AHandcarActor::UpdatePropertiesFromDA()
 	if (dataAsset)
 	{
 		dataAsset->UpdateUseDebug(useRealtime, useDebug, useDebugTool);
-		dataAsset->UpdateUseHandcarDebug(useSpeedDebug, useFrictionDebug, useSlopeAccelerationDebug, useTotalAccelerationDebug);
+		dataAsset->UpdateHandcarUseDebug(useSpeedDebug, useFrictionDebug, useSlopeAccelerationDebug, useTotalAccelerationDebug);
 
-		dataAsset->UpdateSpeed(maxSpeed, rotationSpeed);
-		dataAsset->UpdateFriction(friction, frictionSpeedPercent);
+		dataAsset->UpdateHandcarSpeed(maxSpeed, rotationSpeed);
+		dataAsset->UpdateHandcarFriction(friction, frictionSpeedPercent);
 	}
 }
 
@@ -121,9 +126,7 @@ void AHandcarActor::Rotate(const float _deltaTime)
 	if (currentRail && currentSpeed != 0.0f)
 	{
 		const FVector _actorLoc = GetActorLocation();
-
-		const float _addedDistance = FMath::Abs(currentSpeed) * _deltaTime;
-		float _lookAtDistance = currentDistance + _addedDistance;
+		float _lookAtDistance = currentDistance + 1.0f;
 
 		ARailActor* _lookAtRail = currentRail;
 
@@ -132,7 +135,7 @@ void AHandcarActor::Rotate(const float _deltaTime)
 			_lookAtRail = FindNextRail(false);
 
 			if (_lookAtRail)
-				_lookAtDistance = _lookAtRail->GetDistanceAtLocation(_actorLoc) + _addedDistance;
+				_lookAtDistance = _lookAtRail->GetDistanceAtLocation(_actorLoc) + 1.0f;
 		}
 
 		if (_lookAtRail)
@@ -140,7 +143,7 @@ void AHandcarActor::Rotate(const float _deltaTime)
 			const FRotator _actorRot = GetActorRotation();
 			const FVector _currentTargetLoc = _lookAtRail->GetLocationAtDistance(_lookAtDistance);
 
-			//Note : No lerp for the roll.
+			//No lerp for the roll.
 			FRotator _lookAt = UKismetMathLibrary::FindLookAtRotation(_actorLoc, _currentTargetLoc);
 			_lookAt.Roll = _actorRot.Roll;
 
@@ -154,20 +157,27 @@ void AHandcarActor::Rotate(const float _deltaTime)
 void AHandcarActor::CheckUpdateIsBlocked(const float _distance)
 {
 	const float _stopDistance = currentRail->GetDistanceAtStopLocation(onReturn);
-	const bool _updateIsBlocked = onReturn ? _distance <= _stopDistance
-									: _distance >= _stopDistance;
+	const bool _updateIsBlocked = onReturn ? _distance < _stopDistance
+									: _distance > _stopDistance;
 
-	if (_updateIsBlocked)
+	if (currentSpeed != 0.0f)
 	{
-		nextRail = FindNextRail(true);
-		isBlocked = nextRail ? false
-					: true;
+		if (_updateIsBlocked)
+		{
 
-		currentSpeed = isBlocked ? 0.0f
-						: currentSpeed;
+			nextRail = FindNextRail(true);
+			isBlocked = nextRail ? false
+						: true;
+
+			currentSpeed = isBlocked ? 0.0f
+							: currentSpeed;
+		}
+		else
+			isBlocked = false;
 	}
 	else
-		isBlocked = false;
+		isBlocked = true;
+
 }
 
 bool AHandcarActor::CheckUpdateCurrentRail(const float _distance)
@@ -208,10 +218,10 @@ ARailActor* AHandcarActor::FindNextRail(const bool _isUnblocked) const
 						if (!_nextRail->GetIsBlocked(_nextLever))
 							return _nextRail;
 				}
-						
+
 				_nextRail = nullptr;
 			}
-			
+
 			return _nextRail;
 		}
 	}
@@ -256,7 +266,7 @@ void AHandcarActor::UpdateCurrentSlopeAcceleration()
 	//The slope acceleration stays the same if the handcar isn't moving.
 	if (slopeAccelerationCurve && currentSpeed != 0.0f)
 	{
-		//Note : The curve has different values for the climb and the descent. All the values are positives.
+		//The curve has different values for the climb and the descent. All the values are positives.
 		//A positive slope angle gives a value for a climb and a negative gives a value for a descent.
 
 		const float _slopeAngle = GetActorRotation().Pitch;
@@ -281,6 +291,9 @@ void AHandcarActor::UpdateTotalAcceleration()
 	if (nitro)
 		_totalAcceleration += nitro->GetCurrentAcceleration();
 
+	if (brake && currentSpeed != 0.0f)
+		_totalAcceleration += brake->GetUpdateCurrentDecelerationValue(currentSpeed);
+
 	if (handle)
 		_totalAcceleration += handle->GetCurrentAcceleration();
 
@@ -295,11 +308,15 @@ void AHandcarActor::UpdateTotalAcceleration()
 void AHandcarActor::BeginPlay()
 {
 	Super::BeginPlay();
+
 	UpdatePropertiesFromDA();
 	InitLocationRotation();
 
 	if (nitro)
-		nitro->NitroBeginPlay(dataAsset);
+		nitro->NitroBeginPlay(dataAsset, this);
+
+	if (brake)
+		brake->BrakeBeginPlay(dataAsset, this);
 
 	if (handle)
 		handle->HandleBeginPlay(dataAsset, this);
@@ -313,6 +330,9 @@ void AHandcarActor::Tick(float DeltaTime)
 	{
 		if (nitro)
 			nitro->NitroTick(DeltaTime);
+
+		if (brake)
+			brake->BrakeTick(DeltaTime);
 
 		if (handle)
 			handle->HandleTick(DeltaTime);
@@ -331,6 +351,8 @@ void AHandcarActor::Tick(float DeltaTime)
 
 void AHandcarActor::PrintDebug() const
 {
+	Super::PrintDebug();
+
 	if (useSpeedDebug)
 		PRINT_SCREEN_WITH_FLOAT_TICK("[Handcar] Speed : ", currentSpeed, FColor::Blue);
 
@@ -342,4 +364,48 @@ void AHandcarActor::PrintDebug() const
 
 	if (useTotalAccelerationDebug)
 		PRINT_SCREEN_WITH_FLOAT_TICK("[Handcar] Total Acceleration : ", totalAcceleration, FColor::Magenta);
+}
+
+
+void AHandcarActor::OnTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+	bool bFromSweep, const FHitResult& SweepResult)
+{
+	Super::OnTriggerBeginOverlap(OverlappedComp, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+
+	if (OtherActor)
+	{
+		ACustomPlayer* _player = Cast<ACustomPlayer>(OtherActor);
+
+		if (_player)
+		{
+			if (hud)
+				hud->SetWidgetVisibility(true, EWidgetType::HandcarNitroFuelWidget);
+		}
+	}
+}
+
+void AHandcarActor::OnTriggerEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	Super::OnTriggerEndOverlap(OverlappedComp, OtherActor, OtherComp, OtherBodyIndex);
+
+	if (OtherActor)
+	{
+		ACustomPlayer* _player = Cast<ACustomPlayer>(OtherActor);
+
+		if (_player)
+		{
+			if (hud)
+				hud->SetWidgetVisibility(false, EWidgetType::HandcarNitroFuelWidget);
+		}
+	}
+}
+
+
+void AHandcarActor::ChangeWay()
+{
+	if (nitro)
+		nitro->InverseNegateAcceleration();
+
+	if (handle)
+		handle->InverseNegateAcceleration();
 }

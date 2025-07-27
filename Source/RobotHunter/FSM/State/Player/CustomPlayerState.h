@@ -16,10 +16,11 @@ class ROBOTHUNTER_API UCustomPlayerState : public UCustomState
 #pragma region Properties
 protected:
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Camera")
-	FString cameraSettingsKey;
+	TEnumAsByte<ECameraKey> cameraSettingsKey;
+
 
 	UPROPERTY(EditAnywhere, Category = "Custom Property|UI")
-	TEnumAsByte<EWidgetType> widgetType;
+	TArray<TEnumAsByte<EWidgetType>> widgetTypes;
 
 
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Input")
@@ -28,6 +29,9 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<ACustomPlayer> player;
+
+	UPROPERTY()
+	TObjectPtr<ACustomHUD> hud;
 #pragma endregion
 
 
@@ -37,9 +41,11 @@ public:
 
 protected:
 	void RetrievePlayer();
+	void RetrieveHUD();
 
 	void UpdateCameraSettings();
-	void UpdateWidget();
+	void ShowWidgets();
+	void HideWidgets();
 
 	void DisablePlayerInputContext();
 	UFUNCTION() void EnablePlayerInputContext();

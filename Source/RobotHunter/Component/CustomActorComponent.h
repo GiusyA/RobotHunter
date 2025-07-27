@@ -37,6 +37,8 @@ protected:
 	virtual void DrawDebug() const {}
 	virtual void DrawDebugTool() const {}
 
+	virtual void PrintDebug() const {}
+
 public:
 	virtual void SetupAttachment(USceneComponent* _sceneComp) const {}
 #pragma endregion

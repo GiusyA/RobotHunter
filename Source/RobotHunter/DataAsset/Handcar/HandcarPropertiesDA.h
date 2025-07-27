@@ -48,6 +48,15 @@ class ROBOTHUNTER_API UHandcarPropertiesDA : public UDataAsset
 #pragma endregion
 
 
+#pragma region Brake
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Debug|Handcar|Brake", meta = (EditCondition = "useDebug", EditConditionHides))
+	bool useBrakePositionOnAngleScopeDebug;
+
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Debug|Handcar|Brake", meta = (EditCondition = "useDebug", EditConditionHides))
+	bool useBrakeDecelerationValueDebug;
+#pragma endregion
+
+
 #pragma region Handle
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Debug|Handcar|Handle", meta = (EditCondition = "useDebug", EditConditionHides))
 	bool useHandleAccelerationDebug;
@@ -164,18 +173,62 @@ class ROBOTHUNTER_API UHandcarPropertiesDA : public UDataAsset
 #pragma endregion
 
 
-#pragma region FuelConsumption
-	UPROPERTY(EditAnywhere, Category = "Custom Property|Nitro|Fuel Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
+#pragma region Fuel
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Nitro|Fuel", meta = (UIMin = 0.0f, ClampMin = 0.0f))
+	float maxFuel;
+
+
+#pragma region Consumption
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Nitro|Fuel|Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
 	float greenZoneFuelConsumption;
 
-	UPROPERTY(EditAnywhere, Category = "Custom Property|Nitro|Fuel Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Nitro|Fuel|Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
 	float yellowZoneFuelConsumption;
 
-	UPROPERTY(EditAnywhere, Category = "Custom Property|Nitro|Fuel Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Nitro|Fuel|Consumption", meta = (UIMin = 0.0f, ClampMin = 0.0f))
 	float redZoneFuelConsumption;
 #pragma endregion
 
 
+#pragma endregion
+
+
+#pragma endregion
+
+
+#pragma region Brake
+
+
+#pragma region Position
+
+
+#pragma region Angle
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Brake|Position|Angle", meta = (UIMin = 0.0f, ClampMin = 0.0f, UIMax = 359.0f, ClampMax = 359.0f))
+	float brakeTightenedAngle;
+
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Brake|Position|Angle", meta = (UIMin = 0.0f, ClampMin = 0.0f, UIMax = 359.0f, ClampMax = 359.0f))
+	float brakeReleasedAngle;
+#pragma endregion
+
+
+#pragma region Movement
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Brake|Position|Movement", meta = (UIMin = 0.1f, ClampMin = 0.1f))
+	float brakeTightenMinValue;
+
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Brake|Position|Movement", meta = (UIMin = 0.1f, ClampMin = 0.1f))
+	float brakeTightenMaxValue;
+
+
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Brake|Position|Movement", meta = (UIMin = 0.1f, ClampMin = 0.1f))
+	float brakeReleaseSpeed;
+#pragma endregion
+
+
+#pragma endregion
+
+
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Brake|Deceleration", meta = (UIMax = 0.0f, ClampMax = 0.0f))
+	float brakeDecelerationValue;
 #pragma endregion
 
 
@@ -221,37 +274,45 @@ public:
 public:
 #pragma region Debug
 	void UpdateUseDebug(bool& _useRealtime, bool& _useDebug, bool& _useDebugTool);
-	void UpdateUseHandcarDebug(bool& _useSpeedDebug, bool& _useFrictionDebug, bool& _useSlopeAccelerationDebug, bool& _useTotalAccelerationDebug);
-	void UpdateUseNitroDebug(bool& _useAccelerationDebug, bool& _useFuelConsumptionDebug);
-	void UpdateUseHandleDebug(bool& _useAccelerationDebug, bool& _useFirstHeightRapportDebug, bool& _useSecondHeightRapportDebug);
+	void UpdateHandcarUseDebug(bool& _useSpeedDebug, bool& _useFrictionDebug, bool& _useSlopeAccelerationDebug, bool& _useTotalAccelerationDebug);
+	void UpdateNitroUseDebug(bool& _useAccelerationDebug, bool& _useFuelConsumptionDebug);
+	void UpdateBrakeUseDebug(bool& _usePositionOnAngleScopeDebug, bool& _useDecelerationValueDebug);
+	void UpdateHandleUseDebug(bool& _useAccelerationDebug, bool& _useFirstHeightRapportDebug, bool& _useSecondHeightRapportDebug);
 #pragma endregion
 
 
 #pragma region Handcar
 
 #pragma region Movement
-	void UpdateSpeed(float& _maxSpeed, float& _rotationSpeed);
+	void UpdateHandcarSpeed(float& _maxSpeed, float& _rotationSpeed);
 
-	void UpdateFriction(float& _friction, float& _frictionSpeedPercent);
+	void UpdateHandcarFriction(float& _friction, float& _frictionSpeedPercent);
 #pragma endregion
 
 #pragma region Nitro
 
 #pragma region UI
-	void UpdateCursorSpeed(float& _cursorSpeed);
+	void UpdateNitroUICursorSpeed(float& _cursorSpeed);
 
-	void UpdateZoneSize(float& _greenZoneSize, float& _yellowZoneSize);
+	void UpdateNitroUIZoneSize(float& _greenZoneSize, float& _yellowZoneSize);
 
 #pragma region Movement
-	void UpdateMovementAngle(float& _minMovementAngle, float& _maxMovementAngle);
-	void UpdateMovementSpeed(float& _minMovementSpeed, float& _maxMovementSpeed);
-	void UpdateMovementTime(float& _minMovementTime, float& _maxMovementTime);
+	void UpdateNitroUIMovementAngle(float& _minMovementAngle, float& _maxMovementAngle);
+	void UpdateNitroUIMovementSpeed(float& _minMovementSpeed, float& _maxMovementSpeed);
+	void UpdateNitroUIMovementTime(float& _minMovementTime, float& _maxMovementTime);
 #pragma endregion
 
 #pragma endregion
 
 	void UpdateNitroAcceleration(float& _acceleration);
-	void UpdateFuelConsumption(float& _greenZoneFuelConsumption, float& _yellowZoneFuelConsumption, float& _redZoneFuelConsumption);
+	void UpdateNitroFuel(float& _maxFuel, float& _greenZoneFuelConsumption, float& _yellowZoneFuelConsumption, float& _redZoneFuelConsumption);
+#pragma endregion
+
+#pragma region Brake
+	void UpdateBrakeAngle(float& _tightenedAngle, float& _releasedAngle);
+	void UpdateBrakeTightenValue(float& _tightenMinValue, float& _tightenMaxValue);
+
+	void UpdateBrakeDecelerationValue(float& _decelerationValue);
 #pragma endregion
 
 #pragma region Handle

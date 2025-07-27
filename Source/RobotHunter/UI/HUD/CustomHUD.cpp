@@ -2,9 +2,10 @@
 
 ACustomHUD::ACustomHUD()
 {
-	currentWidgetType = EWidgetType::DefaultWidgetType;
 	widgetReferences = TArray<TSubclassOf<UCustomUserWidget>>();
 	widgets = TMap<TEnumAsByte<EWidgetType>, UCustomUserWidget*>();
+
+	currentWidgetTypes = TArray<TEnumAsByte<EWidgetType>>();
 }
 
 
@@ -37,21 +38,36 @@ void ACustomHUD::BeginPlay()
 }
 
 
-void ACustomHUD::SetCurrentWidget(const EWidgetType& _type)
+void ACustomHUD::SetWidgetVisibility(const bool _isVisible, const EWidgetType& _type)
 {
-	const bool _default = _type == EWidgetType::DefaultWidgetType;
-	UCustomUserWidget* _widget = GetCurrentWidget();
+	const bool _isDefaultType = _type == EWidgetType::DefaultWidgetType;
 
-	if (_widget)
-		_widget->SetVisibility(ESlateVisibility::Hidden);
-	
-	if (!_default && widgets.Contains(_type))
+	if (!_isDefaultType)
 	{
-		_widget = widgets.FindRef(_type);
+		UCustomUserWidget* _widget = GetWidget(_type);
 
 		if (_widget)
-			_widget->SetVisibility(ESlateVisibility::Visible);
+		{
+			ESlateVisibility _visibility = ESlateVisibility::Hidden;
+
+			if (_isVisible)
+			{
+				currentWidgetTypes.Add(_type);
+				_visibility = ESlateVisibility::Visible;
+			}
+			else
+				currentWidgetTypes.Remove(_type);
+
+			_widget->SetVisibility(_visibility);
+		}
 	}
-	
-	currentWidgetType = _type;
+}
+
+void ACustomHUD::SetWidgetsVisibility(const bool _isVisible, const TArray<TEnumAsByte<EWidgetType>>& _types)
+{
+	if (!_types.IsEmpty())
+	{
+		for (const EWidgetType _type : _types)
+			SetWidgetVisibility(_isVisible, _type);
+	}
 }

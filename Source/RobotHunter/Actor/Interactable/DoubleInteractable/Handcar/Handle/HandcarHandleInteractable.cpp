@@ -60,7 +60,7 @@ void AHandcarHandleInteractable::UpdatePropertiesFromDA(UHandcarPropertiesDA* _d
 	if (_da)
 	{
 		_da->UpdateUseDebug(useRealtime, useDebug, useDebugTool);
-		_da->UpdateUseHandleDebug(useAccelerationDebug, useFirstHeightRapportDebug, useSecondHeightRapportDebug);
+		_da->UpdateHandleUseDebug(useAccelerationDebug, useFirstHeightRapportDebug, useSecondHeightRapportDebug);
 
 		_da->UpdateHandleMeshRotation(maxRotation, rotationValue);
 
@@ -176,8 +176,17 @@ void AHandcarHandleInteractable::StopAcceleration(const FInputActionValue& _valu
 }
 
 
+void AHandcarHandleInteractable::ChangeWay(const FInputActionValue& _value)
+{
+	if (handcar)
+		handcar->ChangeWay();
+}
+
+
 void AHandcarHandleInteractable::PrintDebug() const
 {
+	Super::PrintDebug();
+
 	if (useAccelerationDebug)
 		PRINT_SCREEN_WITH_FLOAT_TICK("[Handcar][Handle] Acceleration : ", currentAcceleration, FColor::Green);
 
@@ -200,6 +209,8 @@ void AHandcarHandleInteractable::SetupPlayerInputs(ACustomPlayer* _player)
 		{
 			_input->BindAction(_inputConfig->GetHandcarHandleAcceleration(), ETriggerEvent::Started, this, &AHandcarHandleInteractable::StartAcceleration);
 			_input->BindAction(_inputConfig->GetHandcarHandleAcceleration(), ETriggerEvent::Completed, this, &AHandcarHandleInteractable::StopAcceleration);
+
+			_input->BindAction(_inputConfig->GetHandcarHandleChangeWay(), ETriggerEvent::Started, this, &AHandcarHandleInteractable::ChangeWay);
 			Super::SetupPlayerInputs(_player);
 		}
 	}
@@ -212,6 +223,8 @@ void AHandcarHandleInteractable::FirstInteraction(ACustomPlayer* _player, UScene
 
 	if (_player)
 		_player->SetFSMBool(EPlayerBool::HandcarHandleBool, true);
+
+	updatePlayerMeshRoll = true;
 }
 
 void AHandcarHandleInteractable::SecondInteraction(ACustomPlayer* _player)
@@ -220,6 +233,8 @@ void AHandcarHandleInteractable::SecondInteraction(ACustomPlayer* _player)
 
 	if (_player)
 		_player->SetFSMBool(EPlayerBool::HandcarHandleBool, false);
+
+	updatePlayerMeshRoll = false;
 }
 
 
@@ -231,31 +246,41 @@ void AHandcarHandleInteractable::HandleBeginPlay(UHandcarPropertiesDA* _da, AHan
 
 void AHandcarHandleInteractable::HandleTick(const float _deltaTime)
 {
-	UpdateHandleHeightRapports();
-
-	if (firstPlayerAccelerates && !secondPlayerAccelerates)
+	if (isRuntime)
 	{
-		UpdateCurrentAcceleration(latestFirstHeightRapport, currentFirstHeightRapport);
-		AddAccelerationBoost(currentFirstHeightRapport, currentSecondHeightRapport);
-		RotateHandle(-maxRotation, -rotationValue, _deltaTime);
-	}
-	else if (!firstPlayerAccelerates && secondPlayerAccelerates)
-	{
-		UpdateCurrentAcceleration(latestSecondHeightRapport, currentSecondHeightRapport);
-		AddAccelerationBoost(currentSecondHeightRapport, currentFirstHeightRapport);
-		RotateHandle(maxRotation, rotationValue, _deltaTime);
-	}
-	else
-	{
-		currentAcceleration = 0.0f;
-
-		if (handleMesh)
+		if (updatePlayerMeshRoll && handcar)
 		{
-			const FRotator _currentRot = handleMesh->GetRelativeRotation();
-			const float _rotationValue = _currentRot.Pitch > 0.0f ? -rotationValue
-											: rotationValue;
+			const FRotator _handcarRot = handcar->GetActorRotation();
+			UpdatePlayerMeshRoll(player, playerPosition, _handcarRot.Pitch);
+			UpdatePlayerMeshRoll(secondPlayer, secondPlayerPosition, -_handcarRot.Pitch);
+		}
 
-			RotateHandle(0.0f, _rotationValue, _deltaTime);
+		UpdateHandleHeightRapports();
+
+		if (firstPlayerAccelerates && !secondPlayerAccelerates)
+		{
+			UpdateCurrentAcceleration(latestFirstHeightRapport, currentFirstHeightRapport);
+			AddAccelerationBoost(currentFirstHeightRapport, currentSecondHeightRapport);
+			RotateHandle(-maxRotation, -rotationValue, _deltaTime);
+		}
+		else if (!firstPlayerAccelerates && secondPlayerAccelerates)
+		{
+			UpdateCurrentAcceleration(latestSecondHeightRapport, currentSecondHeightRapport);
+			AddAccelerationBoost(currentSecondHeightRapport, currentFirstHeightRapport);
+			RotateHandle(maxRotation, rotationValue, _deltaTime);
+		}
+		else
+		{
+			currentAcceleration = 0.0f;
+
+			if (handleMesh)
+			{
+				const FRotator _currentRot = handleMesh->GetRelativeRotation();
+				const float _rotationValue = _currentRot.Pitch > 0.0f ? -rotationValue
+					: rotationValue;
+
+				RotateHandle(0.0f, _rotationValue, _deltaTime);
+			}
 		}
 	}
 }

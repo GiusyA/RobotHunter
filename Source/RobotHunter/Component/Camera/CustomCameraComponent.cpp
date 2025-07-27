@@ -1,28 +1,23 @@
 #include "CustomCameraComponent.h"
-#include "Kismet/KismetMathLibrary.h"
 
 UCustomCameraComponent::UCustomCameraComponent()
 {
 	springArmComponent = CREATE_DEFAULT_SUBOBJECT(USpringArmComponent, "SpringArmComponent");
 	cameraComponent = CREATE_DEFAULT_SUBOBJECT(UCameraComponent, "CameraComponent");
 
-	currentSettingsKey = FString();
-	allSettings = TMap<FString, FCameraSettings>();
+	currentSettingsKey = ECameraKey::DefaultCameraKey;
+	allSettings = TMap<TEnumAsByte<ECameraKey>, FCameraSettings>();
 
 #pragma region Lerp
-	useLerp = false;
+	canLerp = false;
 
-	isLerpingPosition = false;
-	isLerpingRotation = false;
+	socketOffsetLerp = FCustomLerp(ECustomLerpType::VectorLerpType);
+	armLengthLerp = FCustomLerp(ECustomLerpType::FloatLerpType);
+
+	rotationLerp = FCustomLerp(ECustomLerpType::RotatorLerpType);
 #pragma endregion
 
 	currentSettings = FCameraSettings();
-}
-
-
-void UCustomCameraComponent::ClampPitch(FRotator& _rotation)
-{
-	
 }
 
 
@@ -67,43 +62,80 @@ void UCustomCameraComponent::UpdateRotation(const FRotator& _newRotation)
 
 
 #pragma region Lerp
-void UCustomCameraComponent::LerpPosition(const float _lerpAlpha, const FVector& _newPosition)
+void UCustomCameraComponent::InitSocketOffsetLerp()
 {
-	if (isLerpingPosition && springArmComponent)
+	if (springArmComponent)
 	{
-		float& _armLength = springArmComponent->TargetArmLength;
-		_armLength = UKismetMathLibrary::Lerp(_armLength, _newPosition.X, _lerpAlpha);
+		const FVector _socketOffset = springArmComponent->SocketOffset;
+		socketOffsetLerp.baseValueVector = _socketOffset;
+		socketOffsetLerp.finalValueVector = FVector(_socketOffset.X, currentSettings.position.Y, currentSettings.position.Z);
+	}
+}
 
-		FVector& _socketOffset = springArmComponent->SocketOffset;
-		const FVector _newSocketOffset = FVector(_socketOffset.X, _newPosition.Y, _newPosition.Z);
-		_socketOffset = UKismetMathLibrary::VLerp(_socketOffset, _newSocketOffset, _lerpAlpha);
+void UCustomCameraComponent::InitArmLengthLerp()
+{
+	if (springArmComponent)
+	{
+		armLengthLerp.baseValueFloat = springArmComponent->TargetArmLength;
+		armLengthLerp.finalValueFloat = currentSettings.position.X;
+	}
+}
 
-		const bool _armLengthDone = FMath::IsNearlyEqual(_armLength, _newPosition.X, 0.1f);
-		const bool _offsetDone = _socketOffset.Equals(_newSocketOffset, 0.1f);
-		isLerpingPosition = !(_armLengthDone && _offsetDone);
+void UCustomCameraComponent::InitRotationLerp()
+{
+	if (springArmComponent)
+	{
+		rotationLerp.baseValueRotator = springArmComponent->GetRelativeRotation();
+		rotationLerp.finalValueRotator = currentSettings.rotation;
+	}
+}
 
-		if (!isLerpingPosition)
+
+void UCustomCameraComponent::StartLerps(const ECameraKey& _lastSettingsKey)
+{
+	InitSocketOffsetLerp();
+	InitArmLengthLerp();
+	InitRotationLerp();
+
+	const FCameraTransitionSettings _transitionSettings = currentSettings.GetTransitionSettings(_lastSettingsKey);
+
+	socketOffsetLerp.curve = armLengthLerp.curve = rotationLerp.curve = _transitionSettings.curve;
+	socketOffsetLerp.reverseCurve = armLengthLerp.reverseCurve = rotationLerp.reverseCurve = _transitionSettings.reverseCurve;
+	socketOffsetLerp.totalDuration = armLengthLerp.totalDuration = rotationLerp.totalDuration = _transitionSettings.duration;
+
+	socketOffsetLerp.StartLerp();
+	armLengthLerp.StartLerp();
+	rotationLerp.StartLerp();
+}
+
+
+void UCustomCameraComponent::LerpPosition(const float _deltaTime)
+{
+	if (canLerp && springArmComponent)
+	{
+		if (socketOffsetLerp.GetIsLerping())
 		{
-			_armLength = _newPosition.X;
-			_socketOffset = _newSocketOffset;
+			socketOffsetLerp.LerpValue(_deltaTime);
+			springArmComponent->SocketOffset = socketOffsetLerp.GetCurrentValueVector();
+		}
+
+		if (armLengthLerp.GetIsLerping())
+		{
+			armLengthLerp.LerpValue(_deltaTime);
+			springArmComponent->TargetArmLength = armLengthLerp.GetCurrentValueFloat();
 		}
 	}
 }
 
-void UCustomCameraComponent::LerpRotation(const float _lerpAlpha, const FRotator& _newRotation)
+void UCustomCameraComponent::LerpRotation(const float _deltaTime)
 {
-	if (currentSettings.setRotation && isLerpingRotation)
+	if (canLerp && currentSettings.setRotation && springArmComponent)
 	{
-		if (springArmComponent)
+		if (rotationLerp.GetIsLerping())
 		{
-			const FRotator _rotation = springArmComponent->GetRelativeRotation();
-			const FRotator _lerpedRotation = UKismetMathLibrary::RLerp(_rotation, _newRotation, _lerpAlpha, true);
-			springArmComponent->SetRelativeRotation(_lerpedRotation);
-
-			isLerpingRotation = !(_lerpedRotation.Equals(_newRotation, 0.1f));
-
-			if (!isLerpingRotation)
-				springArmComponent->SetRelativeRotation(_newRotation);
+			rotationLerp.LerpValue(_deltaTime);
+			const FRotator _newRotation = rotationLerp.GetCurrentValueRotator();
+			springArmComponent->SetRelativeRotation(_newRotation);
 		}
 	}
 }
@@ -113,7 +145,7 @@ void UCustomCameraComponent::LerpRotation(const float _lerpAlpha, const FRotator
 void UCustomCameraComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	useLerp = true;
+	canLerp = true;
 }
 
 void UCustomCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -122,10 +154,8 @@ void UCustomCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 	if (isRuntime)
 	{
-		const float _lerpAlpha = DeltaTime / currentSettings.blendSpeed;
-
-		LerpPosition(_lerpAlpha, currentSettings.position);
-		LerpRotation(_lerpAlpha, currentSettings.rotation);
+		LerpPosition(DeltaTime);
+		LerpRotation(DeltaTime);
 	}
 }
 
@@ -144,31 +174,33 @@ void UCustomCameraComponent::PostEditChangeProperty(FPropertyChangedEvent& Prope
 #endif
 
 
-void UCustomCameraComponent::UpdateCurrentSettings(const FString& _key)
+void UCustomCameraComponent::SetupAttachment(USceneComponent* _root) const
+{
+	SETUP_ATTACHMENT(springArmComponent, _root);
+	SETUP_ATTACHMENT(cameraComponent, springArmComponent);
+}
+
+
+void UCustomCameraComponent::UpdateCurrentSettings(const ECameraKey& _key)
 {
 	if (allSettings.Contains(_key))
 	{
+		const ECameraKey _lastSettingsKey = currentSettingsKey;
 		currentSettingsKey = _key;
 		currentSettings = allSettings[_key];
 
 		UpdateLag(currentSettings.lag);
 		UpdateFOV(currentSettings.fieldOfView);
 
-		if (useLerp)
+		if (canLerp)
 		{
-			isLerpingPosition = isLerpingRotation = true;
+			StartLerps(_lastSettingsKey);
 			return;
 		}
 
 		UpdatePosition(currentSettings.position);
 		UpdateRotation(currentSettings.rotation);
 	}
-}
-
-void UCustomCameraComponent::SetupAttachment(USceneComponent* _root) const
-{
-	SETUP_ATTACHMENT(springArmComponent, _root);
-	SETUP_ATTACHMENT(cameraComponent, springArmComponent);
 }
 
 
@@ -184,12 +216,12 @@ void UCustomCameraComponent::AddRelativeRotation(FRotator& _rotation)
 			//For Unreal rotation pitch, up is in the negatives and down is in the positives.
 			//I think the opposite is easier so I inverse the values here because I don't want it to be confusing in the blueprint.
 			const float _pitchClamp = _rotationPitch < 0.0f ? -currentSettings.pitchClampMax
-										: -currentSettings.pitchClampMin;
+				: -currentSettings.pitchClampMin;
 
 			const float _pitchClampDifference = _pitchClamp - _currentPitch;
 
 			_rotationPitch = FMath::Abs(_rotationPitch) > FMath::Abs(_pitchClampDifference) ? _pitchClampDifference
-								: _rotationPitch;
+				: _rotationPitch;
 
 			springArmComponent->AddRelativeRotation(_rotation);
 		}

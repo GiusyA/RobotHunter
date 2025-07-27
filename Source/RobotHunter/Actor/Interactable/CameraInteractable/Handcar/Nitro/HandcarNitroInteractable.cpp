@@ -2,6 +2,7 @@
 #include "EnhancedInputComponent.h"
 #include "RobotHunter/Player/CustomPlayer.h"
 #include "RobotHunter/UI/HUD/CustomHUD.h"
+#include "RobotHunter/Actor/Handcar/HandcarActor.h"
 
 AHandcarNitroInteractable::AHandcarNitroInteractable()
 {
@@ -17,7 +18,14 @@ AHandcarNitroInteractable::AHandcarNitroInteractable()
 	acceleration = 100.0f;
 
 
-#pragma region FuelConsumption
+#pragma region Fuel
+	maxFuel = 500.0f;
+
+	hasFuel = true;
+	currentFuel = 0.0f;
+
+
+#pragma region Consumption
 	greenZoneFuelConsumption = 5.0f;
 	yellowZoneFuelConsumption = 10.0f;
 	redZoneFuelConsumption = 15.0f;
@@ -26,8 +34,17 @@ AHandcarNitroInteractable::AHandcarNitroInteractable()
 #pragma endregion
 
 
-	propertiesDA = nullptr;
+#pragma endregion
+
+
+#pragma region UI
 	widget = nullptr;
+	fuelWidget = nullptr;
+#pragma endregion
+
+
+	propertiesDA = nullptr;
+	handcar = nullptr;
 
 
 	isActive = false;
@@ -49,7 +66,7 @@ void AHandcarNitroInteractable::InitializeWidget()
 		widget->StartZonesMovement();
 
 		if (valveMesh)
-			valveMesh->SetWorldRotation(FRotator(0.0f, 0.0f, widget->GetCursorAngularOffset()));
+			valveMesh->SetRelativeRotation(FRotator(0.0f, 0.0f, widget->GetCursorAngularOffset()));
 	}
 	else
 	{
@@ -58,6 +75,25 @@ void AHandcarNitroInteractable::InitializeWidget()
 		TIMER_MANAGER.SetTimer(_initializeWidgetTimer, _delegate, 0.1f, false);
 	}
 }
+
+void AHandcarNitroInteractable::InitializeFuelWidget()
+{
+	if (!fuelWidget)
+		fuelWidget = FindHandcarNitroFuelWidget();
+
+	if (fuelWidget)
+	{
+		fuelWidget->SetMaxFuel(maxFuel);
+		fuelWidget->SetCurrentFuel(maxFuel);
+	}
+	else
+	{
+		const FTimerDelegate _delegate = FTimerDelegate::CreateLambda([&]() { InitializeFuelWidget(); });
+		FTimerHandle _initializeFuelWidgetTimer = FTimerHandle();
+		TIMER_MANAGER.SetTimer(_initializeFuelWidgetTimer, _delegate, 0.1f, false);
+	}
+}
+
 
 void AHandcarNitroInteractable::MoveWidgetCursor(const FInputActionValue& _value)
 {
@@ -68,7 +104,7 @@ void AHandcarNitroInteractable::MoveWidgetCursor(const FInputActionValue& _value
 
 		if (_inputValue != 0.0f)
 			if (valveMesh)
-				valveMesh->SetWorldRotation(FRotator(0.0f, 0.0f, widget->GetCursorAngularOffset()));
+				valveMesh->SetRelativeRotation(FRotator(0.0f, 0.0f, widget->GetCursorAngularOffset()));
 	}
 }
 
@@ -78,10 +114,10 @@ void AHandcarNitroInteractable::UpdatePropertiesFromDA()
 	if (propertiesDA)
 	{
 		propertiesDA->UpdateUseDebug(useRealtime, useDebug, useDebugTool);
-		propertiesDA->UpdateUseNitroDebug(useAccelerationDebug, useFuelConsumptionDebug);
+		propertiesDA->UpdateNitroUseDebug(useAccelerationDebug, useFuelConsumptionDebug);
 
 		propertiesDA->UpdateNitroAcceleration(acceleration);
-		propertiesDA->UpdateFuelConsumption(greenZoneFuelConsumption, yellowZoneFuelConsumption, redZoneFuelConsumption);
+		propertiesDA->UpdateNitroFuel(maxFuel, greenZoneFuelConsumption, yellowZoneFuelConsumption, redZoneFuelConsumption);
 	}
 }
 
@@ -125,21 +161,40 @@ void AHandcarNitroInteractable::UpdateCurrentFuelConsumption()
 
 void AHandcarNitroInteractable::UpdateCurrentAcceleration()
 {
-	currentAcceleration = !isActive ? 0.0f
+	currentAcceleration = !isActive || !hasFuel ? 0.0f
 							: negateAcceleration ? -acceleration
 							: acceleration;
 }
 
+
+void AHandcarNitroInteractable::ConsumeFuel(const float _deltaTime)
+{
+	if (currentFuelConsumption > 0.0f && currentFuel > 0.0f)
+	{
+		const float _newCurrentFuel = currentFuel - (currentFuelConsumption * _deltaTime);
+		currentFuel = _newCurrentFuel > 0.0f ? _newCurrentFuel
+						: 0.0f;
+
+		if (fuelWidget)
+			fuelWidget->SetCurrentFuel(currentFuel);
+	}
+
+	hasFuel = currentFuel > 0.0f;
+}
+
+
 UHandcarNitroWidget* AHandcarNitroInteractable::FindHandcarNitroWidget() const
 {
-	ACustomHUD* _hud = nullptr;
-	APlayerController* _controller = FIRST_PLAYER_CONTROLLER;
+	if (hud)
+		return CAST(UHandcarNitroWidget, hud->GetWidget(EWidgetType::HandcarNitroWidget));
 
-	if (_controller)
-		_hud = CAST(ACustomHUD, _controller->GetHUD());
+	return nullptr;
+}
 
-	if (_hud)
-		return CAST(UHandcarNitroWidget, _hud->GetWidget(EWidgetType::HandcarNitroWidget));
+UHandcarNitroFuelWidget* AHandcarNitroInteractable::FindHandcarNitroFuelWidget() const
+{
+	if (hud)
+		return CAST(UHandcarNitroFuelWidget, hud->GetWidget(EWidgetType::HandcarNitroFuelWidget));
 
 	return nullptr;
 }
@@ -147,6 +202,8 @@ UHandcarNitroWidget* AHandcarNitroInteractable::FindHandcarNitroWidget() const
 
 void AHandcarNitroInteractable::PrintDebug() const
 {
+	Super::PrintDebug();
+
 	if (useAccelerationDebug)
 		PRINT_SCREEN_WITH_FLOAT_TICK("[Handcar][Nitro] Acceleration : ", currentAcceleration, FColor::Green);
 
@@ -160,7 +217,7 @@ void AHandcarNitroInteractable::SetupPlayerInputs(ACustomPlayer* _player)
 	if (_player)
 	{
 		UEnhancedInputComponent* _input = Cast<UEnhancedInputComponent>(_player->InputComponent);
-		UInputConfigDA* _inputConfig = _player->GetInputConfig();
+		const UInputConfigDA* _inputConfig = _player->GetInputConfig();
 
 		if (_input && _inputConfig)
 		{
@@ -177,6 +234,8 @@ void AHandcarNitroInteractable::FirstInteraction(ACustomPlayer* _player, USceneC
 
 	if (_player)
 		_player->SetFSMBool(EPlayerBool::HandcarNitroBool, true);
+
+	updatePlayerMeshRoll = true;
 }
 
 void AHandcarNitroInteractable::SecondInteraction(ACustomPlayer* _player)
@@ -185,24 +244,38 @@ void AHandcarNitroInteractable::SecondInteraction(ACustomPlayer* _player)
 
 	if (_player)
 		_player->SetFSMBool(EPlayerBool::HandcarNitroBool, false);
+
+	updatePlayerMeshRoll = false;
 }
 
 
-void AHandcarNitroInteractable::NitroBeginPlay(UHandcarPropertiesDA* _da)
+void AHandcarNitroInteractable::NitroBeginPlay(UHandcarPropertiesDA* _da, AHandcarActor* _handcar)
 {
 	propertiesDA = _da;
 	UpdatePropertiesFromDA();
+	handcar = _handcar;
+
+	currentFuel = maxFuel;
 	InitializeWidget();
+	InitializeFuelWidget();
 }
 
 void AHandcarNitroInteractable::NitroTick(const float _deltaTime)
 {
 	if (isRuntime)
 	{
+		if (updatePlayerMeshRoll && handcar)
+		{
+			const FRotator _handcarRot = handcar->GetActorRotation();
+			UpdatePlayerMeshRoll(player, playerPosition, -_handcarRot.Pitch);
+		}
+
 		if (widget)
 			widget->MoveZones(_deltaTime);
 
 		UpdateCurrentFuelConsumption();
 		UpdateCurrentAcceleration();
+
+		ConsumeFuel(_deltaTime);
 	}
 }

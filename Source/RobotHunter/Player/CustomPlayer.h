@@ -32,6 +32,7 @@ class ROBOTHUNTER_API ACustomPlayer : public ACharacter
 	TObjectPtr<UInputMappingContext> currentInputContext;
 
 	bool inputEnabled;
+	bool isAiming;
 #pragma endregion
 
 
@@ -133,6 +134,8 @@ protected:
 	void InteractStarted(const FInputActionValue& _value);
 	void InteractCompleted(const FInputActionValue& _value);
 
+	void AimStarted(const FInputActionValue& _value);
+
 public:
 	void EnableInputContext(UInputMappingContext* _context);
 	void DisableCurrentInputContext();
@@ -140,7 +143,7 @@ public:
 
 	void SetActorRotation(const FRotator& _rotation, const bool _updateCamera = false);
 
-	void UpdateCameraCurrentSettings(const FString& _key);
+	void UpdateCameraCurrentSettings(const ECameraKey& _key);
 	void SetCameraViewWithBlend(AActor* _newView, const float _blendSpeed);
 #pragma endregion
 };

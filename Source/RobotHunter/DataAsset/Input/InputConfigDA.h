@@ -34,13 +34,33 @@ class ROBOTHUNTER_API UInputConfigDA : public UDataAsset
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Action")
 	TObjectPtr<UInputAction> interactionAction;
 
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Action")
+	TObjectPtr<UInputAction> aimAction;
+
 
 #pragma region Handcar
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Action|Handcar")
-	TObjectPtr<UInputAction> handcarNitroCursorAction;
+	TObjectPtr<UInputAction> handcarNitroCursorAction; 
+
+	
+#pragma region Brake
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Action|Handcar")
+	TObjectPtr<UInputAction> handcarBrakeTightenAction;
 
 	UPROPERTY(EditAnywhere, Category = "Custom Property|Action|Handcar")
+	TObjectPtr<UInputAction> handcarBrakeReleaseAction;
+#pragma endregion
+
+
+#pragma region Handle
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Action|Handcar")
 	TObjectPtr<UInputAction> handcarHandleAcceleration;
+
+	UPROPERTY(EditAnywhere, Category = "Custom Property|Action|Handcar")
+	TObjectPtr<UInputAction> handcarHandleChangeWay;
+#pragma endregion
+
+
 #pragma endregion
 
 
@@ -63,9 +83,21 @@ public:
 
 	FORCEINLINE UInputAction* GetInteractionAction() const { return interactionAction; }
 
+	FORCEINLINE UInputAction* GetAimAction() const { return aimAction; }
+
 #pragma region Handcar
 	FORCEINLINE UInputAction* GetHandcarNitroCursorAction() const { return handcarNitroCursorAction; }
+
+#pragma region Brake
+	FORCEINLINE UInputAction* GetHandcarBrakeTightenAction() const { return handcarBrakeTightenAction; }
+	FORCEINLINE UInputAction* GetHandcarBrakeReleaseAction() const { return handcarBrakeReleaseAction; }
+#pragma endregion
+
+#pragma region Handle
 	FORCEINLINE UInputAction* GetHandcarHandleAcceleration() const { return handcarHandleAcceleration; }
+	FORCEINLINE UInputAction* GetHandcarHandleChangeWay() const { return handcarHandleChangeWay; }
+#pragma endregion
+
 #pragma endregion
 
 #pragma endregion
