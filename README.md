@@ -26,7 +26,6 @@
     - CustomPlayerState
   - CustomTransition
     - CustomPlayerTransition
-- CustomGameModeBase[^2]
 - CustomPlayer :busts_in_silhouette:
 - CustomHUD :busts_in_silhouette:
 - CustomUserWidget
@@ -37,4 +36,3 @@
 - CustomMacros :busts_in_silhouette:
   
 [^1]: Should've been called RailLeverInteractable
-[^2]: Currently empty
