@@ -35,12 +35,6 @@
 - CustomLerp
 - CustomEnum :busts_in_silhouette:
 - CustomMacros :busts_in_silhouette:
-
-## Coming soon
-- EnemyDetectionComponent
-- BonusComponent
-- StatusComponent
-- HandcarStopInteractable (auto mode when the handcar is called to the stop)
   
 [^1]: Should've been called RailLeverInteractable
 [^2]: Currently empty
